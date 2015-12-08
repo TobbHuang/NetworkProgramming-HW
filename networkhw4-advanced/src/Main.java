@@ -10,7 +10,7 @@ public class Main {
 	static ArrayList<Integer> counter = new ArrayList<Integer>();
 	static ArrayList<JSONObject> instruction = new ArrayList<JSONObject>();
 
-	static int PORT = 5569;
+	static int PORT = 5566;
 
 	static DatagramSocket socket;
 
@@ -220,17 +220,21 @@ class MyThread extends Thread {
 					if (port == Main.list.get(index).getPort())
 						break;
 				}
-				// Main.list.get(index).save(money);
-				sendJsn.put("message", "ok");
+				if (index < Main.list.size()) {
+					// Main.list.get(index).save(money);
+					sendJsn.put("message", "ok");
+
+					// 添加到计数器，添加到待执行指令
+					rcvJsn.put("index", index);
+					Main.counter.add(2);
+					Main.instruction.add(rcvJsn);
+				} else {
+					sendJsn.put("message", "invalid transaction");
+				}
 				sendBuf = sendJsn.toString().getBytes();
 				sendPacket = new DatagramPacket(sendBuf, sendBuf.length,
 						dataPacket.getAddress(), port);
 				Main.socket.send(sendPacket);
-
-				// 添加到计数器，添加到待执行指令
-				rcvJsn.put("index", index);
-				Main.counter.add(2);
-				Main.instruction.add(rcvJsn);
 
 			} else if (action.equals("withdraw")) {
 				long money = rcvJsn.getInt("money");
@@ -242,7 +246,10 @@ class MyThread extends Thread {
 					if (port == Main.list.get(index).getPort())
 						break;
 				}
-				boolean result = Main.list.get(index).withdraw(money);
+				boolean result = false;
+				if (index < Main.list.size())
+					result = Main.list.get(index).withdraw(money);
+				
 				if (result) {
 					sendJsn.put("message", "ok");
 				} else {

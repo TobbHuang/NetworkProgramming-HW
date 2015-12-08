@@ -8,7 +8,7 @@ public class Main {
 
 	static ArrayList<Account> list = new ArrayList<Account>();
 
-	static int PORT = 5568;
+	static int PORT = 5566;
 
 	static DatagramSocket socket;
 
@@ -169,8 +169,13 @@ class MyThread extends Thread {
 					if (port == Main.list.get(index).getPort())
 						break;
 				}
-				Main.list.get(index).save(money);
-				sendJsn.put("message", "ok");
+				if (index < Main.list.size()) {
+					Main.list.get(index).save(money);
+
+					sendJsn.put("message", "ok");
+				} else {
+					sendJsn.put("message", "invalid transaction");
+				}
 				sendBuf = sendJsn.toString().getBytes();
 				sendPacket = new DatagramPacket(sendBuf, sendBuf.length,
 						dataPacket.getAddress(), port);
@@ -186,7 +191,9 @@ class MyThread extends Thread {
 					if (port == Main.list.get(index).getPort())
 						break;
 				}
-				boolean result = Main.list.get(index).withdraw(money);
+				boolean result = false;
+				if (index < Main.list.size())
+					result = Main.list.get(index).withdraw(money);
 				if (result) {
 					sendJsn.put("message", "ok");
 				} else {
