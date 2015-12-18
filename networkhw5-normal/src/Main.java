@@ -1,14 +1,12 @@
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class Main {
 
-	static int PORT = 5566;
+	static int PORT = 5567;
 
 	static ArrayList<Account> account = new ArrayList<Account>();
 
@@ -47,11 +45,14 @@ class MyThread extends Thread {
 			InputStream inStream = s.getInputStream();
 			OutputStream outStream = s.getOutputStream();
 
-			Scanner in = new Scanner(inStream);
-			PrintWriter out = new PrintWriter(outStream, true);
-			while (in.hasNextLine()) {
-				String msg = in.nextLine();
-				
+			byte[] buffer = new byte[1024];
+			int length = 0;
+
+			while (true) {
+				length = inStream.read(buffer);
+
+				String msg = new String(buffer, 0, length);
+
 				System.out.println(msg);
 
 				String[] cmd = msg.split(" ");
@@ -60,15 +61,15 @@ class MyThread extends Thread {
 						Main.account.remove(account);
 						account = null;
 					}
-					out.print("exit\n");
+					outStream.write("exit\n".getBytes());
 					break;
 				} else if (cmd[0].equals("init")) {
 					if (cmd.length < 2 || !cmd[1].equals("-u")) {
-						out.print("option error\n");
+						outStream.write("option error\n".getBytes());
 						continue;
 					}
 					if (cmd.length < 3) {
-						out.print("args error\n");
+						outStream.write("args error\n".getBytes());
 						continue;
 					}
 
@@ -79,7 +80,7 @@ class MyThread extends Thread {
 								|| (tmp >= 'A' && tmp <= 'Z')
 								|| (tmp >= '0' && tmp <= '9') || tmp == '_' || tmp == '-')) {
 							// account_name名称不合法
-							out.print("args error\n");
+							outStream.write("args error\n".getBytes());
 							flag = true;
 							break;
 						}
@@ -94,21 +95,56 @@ class MyThread extends Thread {
 						if (cmd[2].equals(Main.account.get(j).getAccountName()))
 							break;
 					}
-					if (j == Main.account.size()) {
+					if (j != 0 && j == Main.account.size()) {
 						// account_name重复
-						out.print("This account has been registered\n");
+						outStream.write("This account has been registered\n"
+								.getBytes());
 						continue;
 					}
 
 					account = new Account(cmd[2]);
 					Main.account.add(account);
-					out.print(cmd[2] + "@nctu.edu.tw\n");
+					outStream.write((cmd[2] + "@nctu.edu.tw\n").getBytes());
+
+				} else if (cmd[0].equals("ls")) {
+					if (cmd.length < 2) {
+						outStream.write("option error\n".getBytes());
+						continue;
+					}
+
+					if (cmd[1].equals("-u")) {
+						String tmp = "";
+						if (Main.account.size() == 0) {
+							tmp = "no accounts\n";
+						} else {
+							for (int i = 0; i < Main.account.size(); i++) {
+								tmp += (Main.account.get(i).getAccountName() + "@nctu.edu.tw\n");
+							}
+						}
+						outStream.write(tmp.getBytes());
+					} else if (cmd[1].equals("-l")) {
+						if (account == null) {
+							outStream.write("init first\n".getBytes());
+						} else {
+							outStream.write(account.getAllMails().getBytes());
+						}
+					} else if (cmd[1].equals("-a")) {
+						if (account == null) {
+							outStream.write("init first\n".getBytes());
+						} else {
+							outStream.write(account.getInfo().getBytes());
+						}
+					} else {
+						outStream.write("option error\n".getBytes());
+						continue;
+					}
 
 				}
 
 			}
 
-			in.close();
+			inStream.close();
+			outStream.close();
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -152,6 +188,30 @@ class Account {
 
 	}
 
+	String getAllMails() {
+		String tmp = "";
+
+		if (allMails.size() == 0) {
+			tmp = "no mail\n";
+		} else {
+			for (int i = 0; i < allMails.size(); i++) {
+				tmp += ((i + 1) + "." + allMails.get(i).getTitle());
+				if (!allMails.get(i).isRead()) {
+					tmp += "(new)";
+				}
+				tmp += "\n";
+			}
+		}
+
+		return tmp;
+
+	}
+
+	String getInfo() {
+		return "Account: " + account_name + "\nMail address: " + account_name
+				+ "@nctu.edu.tw\nNumber of mails: " + allMails.size() + "\n";
+	}
+
 }
 
 class Mail {
@@ -189,6 +249,10 @@ class Mail {
 
 	String getContent() {
 		return content;
+	}
+
+	boolean isRead() {
+		return isRead;
 	}
 
 	void read() {
