@@ -8,7 +8,7 @@ import java.util.Date;
 
 public class Main {
 
-	static int PORT = 5568;
+	static int PORT = 5566;
 
 	static ArrayList<Account> account = new ArrayList<Account>();
 
@@ -257,9 +257,14 @@ class MyThread extends Thread {
 						outStream.write("option error\n".getBytes());
 						continue;
 					}
+					
+					if (cmd.size() < 7) {
+						outStream.write("args error\n".getBytes());
+						continue;
+					}
 
 					if (cmd.size() != 7) {
-						outStream.write("args error\n".getBytes());
+						outStream.write("option error\n".getBytes());
 						continue;
 					}
 
@@ -328,6 +333,11 @@ class MyThread extends Thread {
 
 					if (cmd.size() < 5) {
 						outStream.write("args error\n".getBytes());
+						continue;
+					}
+					
+					if (cmd.size() != 5) {
+						outStream.write("option error\n".getBytes());
 						continue;
 					}
 
@@ -400,8 +410,13 @@ class MyThread extends Thread {
 						continue;
 					}
 
-					if (cmd.size() != 7) {
+					if (cmd.size() < 7) {
 						outStream.write("args error\n".getBytes());
+						continue;
+					}
+					
+					if (cmd.size() != 7) {
+						outStream.write("option error\n".getBytes());
 						continue;
 					}
 
